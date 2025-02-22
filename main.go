@@ -1,16 +1,24 @@
 package main
 
 import (
-    "github.com/gin-gonic/gin"
+	"log"
 
-    "awsses/api"
+	"awsses/api"
+	"awsses/database"
+	"awsses/models"
+
+	"github.com/gin-gonic/gin"
 )
 
-
-
 func main() {
-    router := gin.Default()
-    router.POST("api/v1/email/send", api.SendEmail)
+	database.ConnectDatabase()
+	err := database.DB.AutoMigrate(&models.EmailAccount{})
+	if err != nil {
+		log.Fatal("Failed to migrate database: ", err)
+	}
 
-    router.Run("localhost:8000")
+	router := gin.Default()
+	router.POST("api/v1/email/send", api.SendEmail)
+
+	router.Run("localhost:8000")
 }
