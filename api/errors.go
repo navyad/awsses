@@ -1,9 +1,5 @@
 package api
 
-import (
-    "github.com/gin-gonic/gin"
-)
-
 
 type APIError struct {
 	Code    string `json:"code"`
@@ -27,16 +23,17 @@ func isMessageRejected() bool {
 }
 
 
-func ErrorsCheck() (bool, string, string) {
+func ErrorsCheck() (string, string) {
 	if isSendingPaused() {
 		return "AccountSendingPaused", "Email sending is disabled for your account. Please contact support."
 	}
+	
 	if !isConfigurationSetDoesNotExist() {
 		return "ConfigurationSetDoesNotExist", "The specified configuration set does not exist."
 	}
 
-	if !isConfigurationSetSendingPaused() {
-		return "ConfigurationSetDoesNotExist", "The specified configuration set does not exist."
+	if isConfigurationSetSendingPaused() {
+		return "ConfigurationSetSendingPaused", "The specified configuration is paused."
 	}
 
 	if isMessageRejected() {
