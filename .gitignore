@@ -13,3 +13,5 @@
 
 # Dependency directories (remove if using Go modules)
 vendor/
+
+.env
