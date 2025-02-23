@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/mail"
 	"strings"
+	"crypto/rand"
+	"fmt"
 )
 
 func isValidEmail(email string) bool {
@@ -51,4 +53,29 @@ func ValidateEmail(req *EmailRequest) (bool, string) {
 		}
 	}
 	return true, ""
+}
+
+
+
+func randomHexDigits(n int) string {
+	bytesNeeded := (n + 1) / 2
+	b := make([]byte, bytesNeeded)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	s := fmt.Sprintf("%x", b)
+	if len(s) > n {
+		s = s[:n]
+	}
+	return s
+}
+
+func RandomMessageID() string {
+	part1 := randomHexDigits(4)
+	part2 := randomHexDigits(4)
+	part3 := randomHexDigits(4)
+	part4 := randomHexDigits(12)
+	part5 := randomHexDigits(6)
+	return fmt.Sprintf("%s-%s-%s-%s-%s", part1, part2, part3, part4, part5)
 }

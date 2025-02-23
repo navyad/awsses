@@ -79,7 +79,7 @@ func SendEmail(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid Email: " + inValidEmail})
 		return
 	}
-	
+
 
 	account, err := getEmailAccount(database.DB, emailReq.Source)
 	if err != nil {
@@ -100,6 +100,6 @@ func SendEmail(c *gin.Context) {
 	updateEmailAccount(database.DB, account)
 
 	c.JSON(http.StatusOK, gin.H{
-		"Message": "email sent successfully",
+		"MessageId": RandomMessageID(),
 	})
 }
