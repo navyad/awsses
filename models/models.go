@@ -8,6 +8,7 @@ type EmailAccount struct {
 	DailySendCount int       `json:"daily_send_count"`
 	DailySendLimit int       `json:"daily_send_limit"`
 	TotalEmails    int       `json:"total_emails"`
+	Bounce    	   int       `json:"bounce"`
 }
 
 

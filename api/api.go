@@ -22,12 +22,18 @@ func getEmailAccount(db *gorm.DB, accountID string) (*models.EmailAccount, error
 	return &account, nil
 }
 
-func updateEmailAccount(db *gorm.DB, account *models.EmailAccount) error {
+func updateEmailAccount(db *gorm.DB, account *models.EmailAccount, isBounced bool) error {
 	account.DailySendCount++
 	account.TotalEmails++
+
+	if isBounced {
+		account.Bounce++
+	}
+	
 	if err := db.Save(&account).Error; err != nil {
 		return err
 	}
+	
 	return nil
 }
 
@@ -103,7 +109,10 @@ func SendEmail(c *gin.Context) {
 		return
 	}
 
-	updateEmailAccount(database.DB, account)
+	// mocking the email bounce 
+	isBounced := true
+
+	updateEmailAccount(database.DB, account, isBounced)
 
 	c.JSON(http.StatusOK, gin.H{
 		"MessageId": RandomMessageID(),
