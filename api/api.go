@@ -1,9 +1,11 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
+	// "strings"
 
 	"awsses/database"
 	"awsses/models"
@@ -13,6 +15,7 @@ import (
 )
 
 var warmingPeriod = 2 * 7 * 24 * time.Hour
+var tenMB = 10 * 1024 * 1024
 
 func getEmailAccount(db *gorm.DB, accountID string) (*models.EmailAccount, error) {
 	var account models.EmailAccount
@@ -29,11 +32,11 @@ func updateEmailAccount(db *gorm.DB, account *models.EmailAccount, isBounced boo
 	if isBounced {
 		account.Bounce++
 	}
-	
+
 	if err := db.Save(&account).Error; err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -58,9 +61,6 @@ func CheckwarmingPeriod(account *models.EmailAccount) bool {
 	return account.DailySendCount >= currentLimit
 }
 
-
-// isValidEmail validates a single email address using net/mail.
-
 func SendEmail(c *gin.Context) {
 	var emailReq EmailRequest
 
@@ -80,18 +80,28 @@ func SendEmail(c *gin.Context) {
 		return
 	}
 
-	ok, inValidEmail := ValidateEmail(&emailReq) 
-	if !ok{
+	// validation of email format To, source, CC, BCC
+	ok, inValidEmail := ValidateEmail(&emailReq)
+	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid Email: " + inValidEmail})
 		return
 	}
 
-	ok, errorMessage = ValidateRecipientsLength(&emailReq) 
-	if !ok{
+	// max recipients cannot be more than 50
+	ok, errorMessage = ValidateRecipientsLength(&emailReq)
+	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": errorMessage})
 		return
 	}
 
+	// message should not be greater than 10 MB
+	// dummySize := tenMB + 1
+	// messageData := strings.Repeat("A", dummySize)
+	messageData, _ := json.Marshal(emailReq.Message)
+	if len(messageData) > tenMB {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Message size exceeds 10 MB limit"})
+		return
+	}
 
 	account, err := getEmailAccount(database.DB, emailReq.Source)
 	if err != nil {
@@ -109,7 +119,7 @@ func SendEmail(c *gin.Context) {
 		return
 	}
 
-	// mocking the email bounce 
+	// mocking the email bounce
 	isBounced := true
 
 	updateEmailAccount(database.DB, account, isBounced)
@@ -118,7 +128,6 @@ func SendEmail(c *gin.Context) {
 		"MessageId": RandomMessageID(),
 	})
 }
-
 
 func GetEmailStats(c *gin.Context) {
 	accountID := c.Query("accountId")
@@ -134,9 +143,10 @@ func GetEmailStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"accountId":         account.ID,
-		"dailySendLimit":    account.DailySendLimit,
-		"dailySendCount":    account.DailySendCount,
-		"totalEmailsSent":       account.TotalEmails,
+		"accountId":       account.ID,
+		"dailySendLimit":  account.DailySendLimit,
+		"dailySendCount":  account.DailySendCount,
+		"totalEmailsSent": account.TotalEmails,
+		"bounceCount":     account.Bounce,
 	})
 }
