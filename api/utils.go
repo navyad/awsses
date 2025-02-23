@@ -1,11 +1,10 @@
 package api
 
 import (
-	"log"
-	"net/mail"
-	"strings"
 	"crypto/rand"
 	"fmt"
+	"net/mail"
+	"strings"
 )
 
 func isValidEmail(email string) bool {
@@ -24,30 +23,34 @@ func isValidEmail(email string) bool {
 	return true
 }
 
-
 func ValidateEmail(req *EmailRequest) (bool, string) {
+
+	destination := req.Destination
+
+	if len(destination.ToAddresses) == 0 && len(destination.CcAddresses) == 0 && len(destination.BccAddresses) == 0 {
+		return false, "At least one recipient must be provided in To, CC, or BCC."
+	}
+
 	if !isValidEmail(req.Source) {
 		return false, req.Source
 	}
 
-	if len(req.Destination.ToAddresses) == 0 {
-		return false, ""
+	if len(destination.ToAddresses) == 0 {
+		return false, "ToAddresses required"
 	}
-	for _, addr := range req.Destination.ToAddresses {
+	for _, addr := range destination.ToAddresses {
 		if !isValidEmail(addr) {
 			return false, addr
-		} else {
-			log.Println(addr, isValidEmail(addr))
 		}
 	}
 
-	for _, addr := range req.Destination.CcAddresses {
+	for _, addr := range destination.CcAddresses {
 		if addr != "" && !isValidEmail(addr) {
 			return false, addr
 		}
 	}
 
-	for _, addr := range req.Destination.BccAddresses {
+	for _, addr := range destination.BccAddresses {
 		if addr != "" && !isValidEmail(addr) {
 			return false, addr
 		}
@@ -57,19 +60,19 @@ func ValidateEmail(req *EmailRequest) (bool, string) {
 
 func ValidateRecipientsLength(req *EmailRequest) (bool, string) {
 
-	if len(req.Destination.ToAddresses) > 50{
+	destination := req.Destination
+
+	if len(destination.ToAddresses) > 50 {
 		return false, "ToAddresses contains more than 50 emails"
 	}
-	if len(req.Destination.CcAddresses) > 50{
+	if len(destination.CcAddresses) > 50 {
 		return false, "CcAddresses contains more than 50 emails"
 	}
-	if len(req.Destination.BccAddresses) > 50{
+	if len(destination.BccAddresses) > 50 {
 		return false, "BccAddresses contains more than 50 emails"
 	}
 	return true, ""
 }
-
-
 
 func randomHexDigits(n int) string {
 	bytesNeeded := (n + 1) / 2
