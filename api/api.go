@@ -80,6 +80,12 @@ func SendEmail(c *gin.Context) {
 		return
 	}
 
+	ok, errorMessage = ValidateRecipientsLength(&emailReq) 
+	if !ok{
+		c.JSON(http.StatusNotFound, gin.H{"error": errorMessage})
+		return
+	}
+
 
 	account, err := getEmailAccount(database.DB, emailReq.Source)
 	if err != nil {
@@ -101,5 +107,27 @@ func SendEmail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"MessageId": RandomMessageID(),
+	})
+}
+
+
+func GetEmailStats(c *gin.Context) {
+	accountID := c.Query("accountId")
+	if accountID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "accountId query parameter is required"})
+		return
+	}
+
+	var account models.EmailAccount
+	if err := database.DB.First(&account, "id = ?", accountID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Account not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"accountId":         account.ID,
+		"dailySendLimit":    account.DailySendLimit,
+		"dailySendCount":    account.DailySendCount,
+		"totalEmailsSent":       account.TotalEmails,
 	})
 }

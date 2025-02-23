@@ -19,6 +19,7 @@ func main() {
 
 	router := gin.Default()
 	router.POST("api/v1/email/send", api.SendEmail)
+	router.GET("api/v1/email/stats", api.GetEmailStats)
 
 	router.Run("localhost:8000")
 }

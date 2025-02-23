@@ -55,6 +55,20 @@ func ValidateEmail(req *EmailRequest) (bool, string) {
 	return true, ""
 }
 
+func ValidateRecipientsLength(req *EmailRequest) (bool, string) {
+
+	if len(req.Destination.ToAddresses) > 50{
+		return false, "ToAddresses contains more than 50 emails"
+	}
+	if len(req.Destination.CcAddresses) > 50{
+		return false, "CcAddresses contains more than 50 emails"
+	}
+	if len(req.Destination.BccAddresses) > 50{
+		return false, "BccAddresses contains more than 50 emails"
+	}
+	return true, ""
+}
+
 
 
 func randomHexDigits(n int) string {
