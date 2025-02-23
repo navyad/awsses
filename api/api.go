@@ -35,7 +35,7 @@ func getDailyLimit(account *models.EmailAccount) int {
 	accountAge := time.Since(account.CreatedAt)
 	log.Println("getDailyLimit", accountAge, warmingPeriod)
 
-	if accountDays < warmingPeriod {
+	if accountAge < warmingPeriod {
 		limit := int(float64(account.DailySendLimit) * (float64(accountAge) / float64(warmingPeriod)))
 		log.Println("warmingPeriod", limit)
 		if limit < 1 {
@@ -51,6 +51,9 @@ func CheckwarmingPeriod(account *models.EmailAccount) bool {
 	currentLimit := getDailyLimit(account)
 	return account.DailySendCount >= currentLimit
 }
+
+
+// isValidEmail validates a single email address using net/mail.
 
 func SendEmail(c *gin.Context) {
 	var emailReq EmailRequest
@@ -70,6 +73,13 @@ func SendEmail(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ok, inValidEmail := ValidateEmail(&emailReq) 
+	if !ok{
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid Email: " + inValidEmail})
+		return
+	}
+	
 
 	account, err := getEmailAccount(database.DB, emailReq.Source)
 	if err != nil {
